@@ -62,6 +62,7 @@ type mutatingWebhook struct {
 	pullPolicy string
 	volumeName string
 	volumePath string
+	preExec    string
 }
 
 var logger *log.Logger
@@ -266,7 +267,11 @@ func (mw *mutatingWebhook) mutateContainers(containers []corev1.Container, podSp
 
 		args = append(args, container.Args...)
 
-		container.Command = []string{fmt.Sprintf("%s/secrets-init", mw.volumePath)}
+		if len(mw.preExec) > 0 {
+			container.Command = []string{fmt.Sprintf("%s %s/secrets-init", mw.preExec, mw.volumePath)}
+		} else {
+			container.Command = []string{fmt.Sprintf("%s/secrets-init", mw.volumePath)}
+		}
 		container.Args = append([]string{fmt.Sprintf("--provider=%s", mw.provider)}, args...)
 
 		container.VolumeMounts = append(container.VolumeMounts, []corev1.VolumeMount{
@@ -415,6 +420,7 @@ func runWebhook(c *cli.Context) error {
 		pullPolicy: c.String("pull-policy"),
 		volumeName: c.String("volume-name"),
 		volumePath: c.String("volume-path"),
+		preExec: 	c.String("pre-exec"),
 	}
 
 	mutator := mutating.MutatorFunc(webhook.secretsMutator)
@@ -546,6 +552,11 @@ func main() {
 					Name:  "provider, p",
 					Usage: "supported secrets manager provider ['aws', 'google']",
 					Value: "aws",
+				},
+				cli.StringFlag{
+					Name:  "pre-exec",
+					Usage: "parameters before run secrets-init",
+					Value: "",
 				},
 			},
 			Usage:       "mutation admission webhook",
