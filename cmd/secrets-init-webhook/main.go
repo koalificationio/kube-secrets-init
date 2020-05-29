@@ -420,7 +420,7 @@ func runWebhook(c *cli.Context) error {
 		pullPolicy: c.String("pull-policy"),
 		volumeName: c.String("volume-name"),
 		volumePath: c.String("volume-path"),
-		preExec: 	c.String("pre-exec"),
+		preExec:    c.String("pre-exec"),
 	}
 
 	mutator := mutating.MutatorFunc(webhook.secretsMutator)
